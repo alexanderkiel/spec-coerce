@@ -102,8 +102,8 @@
 
 (declare coercer*)
 
-(defn and-coercer [specs]
-  (let [coercers (mapv coercer* specs)]
+(defn and-coercer [specs opts]
+  (let [coercers (map #(coercer* % opts) specs)]
     (reify
       Coercer
       (-coerce [_ x]
@@ -116,8 +116,8 @@
           x
           coercers)))))
 
-(defn or-coercer [tagged-preds]
-  (let [coercers (mapv (fn [{:keys [pred]}] (coercer* pred)) tagged-preds)]
+(defn or-coercer [tagged-preds opts]
+  (let [coercers (mapv (fn [{:keys [pred]}] (coercer* pred opts)) tagged-preds)]
     (reify
       Coercer
       (-coerce [_ x]
@@ -199,8 +199,8 @@
               ret))
           ::s/invalid)))))
 
-(defn merge-coercer [specs]
-  (let [coercers (mapv coercer* specs)]
+(defn merge-coercer [specs opts]
+  (let [coercers (map #(coercer* % opts) specs)]
     (reify
       Coercer
       (-coerce [_ x]
@@ -227,23 +227,36 @@
             (-coerce coercer x)
             (-coerce (coercer spec) x)))))))
 
-(defn coll-coercer
-  [{:keys [spec] {:keys [min-count] into-coll :into :or {into-coll []}} :opts}]
-  (let [coercer (coercer* spec)]
+(defn coll-of-coercer
+  [{:keys [spec]
+    {:keys [kind min-count]} :opts}
+   {:keys [coerce-coll-types] :or {coerce-coll-types false} :as opts}]
+  (let [coercer (coercer* spec opts)
+        coll-pred (some-> kind resolve var-get)]
     (reify
       Coercer
       (-coerce [_ x]
-        (if (sequential? x)
+        (if (or (nil? coll-pred) coerce-coll-types (coll-pred x))
           (if (and min-count (< (count x) min-count))
             ::s/invalid
-            (reduce
-              (fn [ret v]
-                (let [v (-coerce coercer v)]
-                  (if (s/invalid? v)
-                    (reduced ::s/invalid)
-                    (conj ret v))))
-              into-coll
-              x))
+            (let [[init complete]
+                  (case kind
+                    `vector?
+                    [[] identity]
+                    (cond
+                      (list? x)
+                      [(list) reverse]
+                      (vector? x)
+                      [[] identity]))]
+              (complete
+                (reduce
+                  (fn [ret v]
+                    (let [v (-coerce coercer v)]
+                      (if (s/invalid? v)
+                        (reduced ::s/invalid)
+                        (conj ret v))))
+                  init
+                  x))))
           ::s/invalid)))))
 
 (defn set-coercer [set]
@@ -257,7 +270,7 @@
 (defn- coercer*
   "Returns a coercer for `spec`."
   {:arglists '([conformed-spec-form])}
-  [[kind val]]
+  [[kind val] opts]
   ;; look at `::spec-specs/spec` for possible kinds and vals
   (case kind
     :set
@@ -276,13 +289,13 @@
         s
         (condp = s
           `s/and
-          (and-coercer args)
+          (and-coercer args opts)
           `s/or
-          (or-coercer args)
+          (or-coercer args opts)
           `s/keys
           (keys-coercer args)
           `s/merge
-          (merge-coercer args)
+          (merge-coercer args opts)
           `s/multi-spec
           (multi-spec-coercer args)
           `s/tuple
@@ -292,7 +305,7 @@
           `s/every-kv
           (throw (UnsupportedOperationException.))
           `s/coll-of
-          (coll-coercer args)
+          (coll-of-coercer args opts)
           `s/map-of
           (throw (UnsupportedOperationException.))
           `s/cat
@@ -324,8 +337,13 @@
 (defn coercer
   "Returns a coercer for `spec`.
 
-  `spec` can be everything which is accepted by `s/valid?` or `s/conform`."
-  [spec]
+  `spec` can be everything which is accepted by `s/valid?` or `s/conform`.
+
+  opts can be:
+   * :coerce-coll-kinds - whether collections should be converted into specified
+                          types as per `:kind` in `s/every`, `s/every-kv`,
+                          `s/coll-of` or `s/map-of`. Defaults to false"
+  [spec & {:as opts}]
   (let [spec-form (s/form spec)
         conformed-spec-form (s/conform ::spec-specs/spec spec-form)]
     (if (s/invalid? conformed-spec-form)
@@ -333,7 +351,7 @@
         (ex-info
           (format "Unable to build a coercer for spec `%s`." spec-form)
           (s/explain-data ::spec-specs/spec spec-form)))
-      (coercer* conformed-spec-form))))
+      (coercer* conformed-spec-form opts))))
 
 (defn- to-coercer [x]
   (if (coercer? x)

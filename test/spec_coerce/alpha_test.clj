@@ -1,5 +1,6 @@
 (ns spec-coerce.alpha-test
   (:require
+    [cheshire.core :as json]
     [clojure.spec.alpha :as s]
     [clojure.spec.test.alpha :as st]
     [clojure.test :refer :all]
@@ -110,10 +111,34 @@
       (testing "containing both keys is valid"
         (is (= {::int 1 ::double 1.0} (coerce coercer {::int "1" ::double "1"})))))))
 
-(comment
-  (let [foo? (constantly true)]
-    (s/conform foo? 1))
+(deftest coll-of-form
+  (testing "Retains the original collection type."
+    (is (list? (coerce (s/coll-of int?) (list 1))))
+    (is (vector? (coerce (s/coll-of int?) [1]))))
 
-  (s/conform :spec-coerce.spec.specs.alpha/spec `(s/merge))
-  (s/conform :spec-coerce.spec.specs.alpha/spec `(s/keys))
-  )
+  (testing "Lists remain in order"
+    (is (= (list 1 2) (coerce (s/coll-of int?) (list 1 2)))))
+
+  (testing "Succeeds on matching collection type"
+    (is (vector? (coerce (s/coll-of int? :kind vector?) [1]))))
+
+  (testing "Fails on non-matching collection type"
+    (is (s/invalid? (coerce (s/coll-of int? :kind vector?) (list 1)))))
+
+  (testing "Coerces collection kinds"
+    (let [coercer (coercer (s/coll-of int? :kind vector?) :coerce-coll-types true)]
+      (is (vector? (coerce coercer (list 1)))))))
+
+(deftest json-coercion
+  (testing "Objects"
+    (let [coercer (coercer (s/keys :req-un [::int]))]
+      (testing "Property names are converted to keywords by Cheshire."
+        (testing "with numeric int"
+          (let [parsed-json (json/parse-string "{\"int\":1}" keyword)]
+            (is (= {:int 1} (coerce coercer parsed-json)))))
+        (testing "with string int"
+          (let [parsed-json (json/parse-string "{\"int\":\"1\"}" keyword)]
+            (is (= {:int 1} (coerce coercer parsed-json)))))
+        (testing "fails with decimal number"
+          (let [parsed-json (json/parse-string "{\"int\":\"1.1\"}" keyword)]
+            (is (s/invalid? (coerce coercer parsed-json)))))))))

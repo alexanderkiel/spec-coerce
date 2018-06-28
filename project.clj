@@ -13,7 +13,8 @@
   :profiles
   {:dev
    {:dependencies
-    [[org.clojure/clojure "1.9.0"]
+    [[cheshire "5.8.0"]
+     [org.clojure/clojure "1.9.0"]
      [org.clojure/test.check "0.9.0"]]}
    :clj-1.10
    {:dependencies
