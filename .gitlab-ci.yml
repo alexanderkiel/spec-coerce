@@ -1,0 +1,22 @@
+image: clojure:lein-2.8.1
+
+stages:
+  - test
+
+test:
+  stage: test
+  tags:
+    - docker
+  script:
+    - lein check
+    - lein lint
+    - lein test
+
+test-clj-1.10:
+  stage: test
+  tags:
+    - docker
+  script:
+    - lein with-profile +clj-1.10 check
+    - lein with-profile +clj-1.10 lint
+    - lein with-profile +clj-1.10 test

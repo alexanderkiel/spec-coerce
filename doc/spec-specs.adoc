@@ -1,0 +1,80 @@
+= Clojure Spec Specification
+Alexander Kiel <akiel@life.uni-leipzig.de>
+:toc: left
+:source-highlighter: coderay
+
+This document defines the specification language which is the foundation of the spec library. The specification language consists of all valid specs.
+
+A spec itself describes a set of allowed values. For example the spec `int?` describes the set of all integers.
+
+NOTE: Code examples assume that the namespace alias `s` refers to `clojure.spec.alpha`.
+
+== Predicates
+
+The simplest form of specs are predicates which are symbols which bind to predicate functions at runtime. Predicate functions are functions with a single argument that return a boolean.
+
+.Spec of a predicate
+[source,clojure]
+----
+symbol?
+----
+
+.Examples
+[source,clojure]
+----
+int?
+double?
+string?
+----
+
+== And-Form
+
+The `and-form` takes a possibly empty sequence of specs. Specs are validated in order. Validation results probagate from left to right. The empty `and-form` validates any value.
+
+.Spec of the and-form
+[source,clojure]
+----
+(s/cat :s #{s/and} :args (s/* ::spec))
+----
+
+.Examples
+[source,clojure]
+----
+(s/and int? pos?)
+----
+
+== Or-Form
+
+The `or-form` takes a possibly empty sequence of choices, each annotated with a tag. Specs of each choice are tried in order. The empty `or-form` doesn't validate any value.
+
+.Spec of the or-form
+[source,clojure]
+----
+(s/cat :s #{s/or} :args (s/* (s/cat :tag keyword? :spec ::spec)))
+----
+
+CAUTION: Replaced `:pred` with `:spec` here because the or-form excepts arbitrary specs instead of only predicates.
+
+.Examples
+[source,clojure]
+----
+(s/or :int int? :dbl double?)
+----
+
+== Keys-Form
+
+.Spec of the keys-form
+[source,clojure]
+----
+(s/cat :s #{s/keys} :args (s/keys* :opt-un [::req ::req-un ::opt ::opt-un ::gen]))
+----
+
+== Merge-Form
+
+The `merge-form` takes a possibly empty sequence of map-validating specs (e.g. `keys-forms`) and validates values which are valid in all specs.
+
+.Spec of the merge-form
+[source,clojure]
+----
+(s/cat :s #{s/merge} :args (s/* ::spec))
+----
