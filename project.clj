@@ -19,5 +19,13 @@
    {:dependencies
     [[org.clojure/clojure "1.10.0-alpha5"]]}}
 
+  :deploy-repositories
+  [["life-snapshots"
+    {:url "https://portal.life.uni-leipzig.de/content/repositories/snapshots"
+     :sign-releases false}]
+   ["life-releases"
+    {:url "https://portal.life.uni-leipzig.de/content/repositories/releases"
+     :sign-releases false}]]
+
   :aliases
   {"lint" ["eastwood" "{}"]})
