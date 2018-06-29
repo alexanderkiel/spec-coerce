@@ -156,7 +156,8 @@
         `(or ~@(gen-req-keys-expr m-sym key-mod keys))))
     keys))
 
-(defn keys-coercer [{:keys [req opt req-un opt-un]}]
+(defn keys-coercer
+  [{:keys [req opt req-un opt-un] :as args} {:keys [f] :as opts}]
   (let [remove-ns #(-> % name keyword)
 
         coercers
@@ -164,19 +165,20 @@
           (fn [ret [kind val]]
             (case kind
               :key
-              (assoc ret (remove-ns val) (coercer val))))
+              (assoc ret (remove-ns val) (coercer val opts))))
           (reduce
             (fn [ret key]
-              (assoc ret (remove-ns key) (coercer key)))
+              (assoc ret (remove-ns key) (coercer key opts)))
             nil
             opt-un)
           req-un)
+
         coercers
         (fn [k]
           (if-let [coercer (get coercers k)]
             coercer
             (when-let [spec (s/get-spec k)]
-              (coercer spec))))
+              (coercer spec opts))))
 
         m-sym 'm
         pred-exprs [`(map? ~m-sym)]
@@ -186,7 +188,7 @@
     (reify
       Coercer
       (-coerce [_ x]
-        (if (keys-pred x)
+        (if (keys-pred (f [:form {:s `s/keys :args args}] x))
           (loop [ret x, [[k v] & next-keys :as keys] x]
             (if keys
               (if-let [coercer (coercers k)]
@@ -209,14 +211,14 @@
             ::s/invalid
             (apply merge ms)))))))
 
-(defn multi-spec-coercer [{mm-sym :mm}]
+(defn multi-spec-coercer [{mm-sym :mm} opts]
   (let [mm (var-get (resolve mm-sym))
         methods (methods mm)
         coercers
         (reduce-kv
           (fn [ret _ spec-fn]
             (let [spec (spec-fn nil)]
-              (assoc ret (s/form spec) (coercer spec))))
+              (assoc ret (s/form spec) (coercer spec opts))))
           nil
           methods)]
     (reify
@@ -259,13 +261,14 @@
                   x))))
           ::s/invalid)))))
 
-(defn set-coercer [set]
+(defn set-coercer [set {:keys [f]}]
   (reify
     Coercer
     (-coerce [_ x]
-      (if (contains? set x)
-        x
-        ::s/invalid))))
+      (let [x (f [:set set] x)]
+        (if (contains? set x)
+          x
+          ::s/invalid)))))
 
 (defn- coercer*
   "Returns a coercer for `spec`."
@@ -274,12 +277,12 @@
   ;; look at `::spec-specs/spec` for possible kinds and vals
   (case kind
     :set
-    (set-coercer val)
+    (set-coercer val opts)
     :pred
     (pred-coercer val)
     :kw
     ;; for keywords, resolve the spec by calling top-level `coercer`
-    (coercer val)
+    (coercer val opts)
     :form
     (let [{:keys [f s args body]} val]
       ;; forms can be a function (f) or a spec (s)
@@ -293,11 +296,11 @@
           `s/or
           (or-coercer args opts)
           `s/keys
-          (keys-coercer args)
+          (keys-coercer args opts)
           `s/merge
           (merge-coercer args opts)
           `s/multi-spec
-          (multi-spec-coercer args)
+          (multi-spec-coercer args opts)
           `s/tuple
           (throw (UnsupportedOperationException.))
           `s/every
@@ -309,23 +312,11 @@
           `s/map-of
           (throw (UnsupportedOperationException.))
           `s/cat
-          (throw (UnsupportedOperationException.))
-          `s/alt
-          (throw (UnsupportedOperationException.))
-          `s/*
-          (throw (UnsupportedOperationException.))
-          `s/+
-          (throw (UnsupportedOperationException.))
-          `s/?
-          (throw (UnsupportedOperationException.))
-          `s/&
-          (throw (UnsupportedOperationException.))
-          `s/keys*
-          (throw (UnsupportedOperationException.))
+          (throw (UnsupportedOperationException. "The cat-form is unsupported."))
           `s/conformer
-          (throw (UnsupportedOperationException.))
+          (throw (UnsupportedOperationException. "The conformer-form is unsupported."))
           `s/fspec
-          (throw (UnsupportedOperationException.))
+          (throw (UnsupportedOperationException. "The fspec-form is unsupported."))
           (throw (ex-info (format "Unexpected spec form `%s`." (prn-str val))
                           {:spec-form val})))
         :else
@@ -343,20 +334,26 @@
    * :coerce-coll-kinds - whether collections should be converted into specified
                           types as per `:kind` in `s/every`, `s/every-kv`,
                           `s/coll-of` or `s/map-of`. Defaults to false"
-  [spec & {:as opts}]
-  (let [spec-form (s/form spec)
-        conformed-spec-form (s/conform ::spec-specs/spec spec-form)]
-    (if (s/invalid? conformed-spec-form)
-      (throw
-        (ex-info
-          (format "Unable to build a coercer for spec `%s`." spec-form)
-          (s/explain-data ::spec-specs/spec spec-form)))
-      (coercer* conformed-spec-form opts))))
+  ([spec]
+   (coercer spec nil))
+  ([spec {:keys [f] :as opts}]
+   (let [spec-form (s/form spec)
+         conformed-spec-form (s/conform ::spec-specs/spec spec-form)]
+     (if (s/invalid? conformed-spec-form)
+       (throw
+         (ex-info
+           (format "Unable to build a coercer for spec `%s`." spec-form)
+           (s/explain-data ::spec-specs/spec spec-form)))
+       (coercer* conformed-spec-form
+                 (cond-> opts (nil? f) (assoc :f (fn [_ x] x))))))))
 
-(defn- to-coercer [x]
+(defn- to-coercer [x opts]
   (if (coercer? x)
     x
-    (coercer x)))
+    (coercer x opts)))
 
-(defn coerce [coercer-or-spec x]
-  (-coerce (to-coercer coercer-or-spec) x))
+(defn coerce
+  ([coercer-or-spec x]
+   (coerce coercer-or-spec x nil))
+  ([coercer-or-spec x opts]
+   (-coerce (to-coercer coercer-or-spec opts) x)))

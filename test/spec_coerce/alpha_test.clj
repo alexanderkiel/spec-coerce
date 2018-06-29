@@ -3,7 +3,7 @@
     [cheshire.core :as json]
     [clojure.spec.alpha :as s]
     [clojure.spec.test.alpha :as st]
-    [clojure.test :refer :all]
+    [clojure.test :refer [deftest is testing]]
     [clojure.test.check.clojure-test :refer [defspec]]
     [clojure.test.check.generators :as gen]
     [clojure.test.check.properties :as prop]
@@ -28,6 +28,20 @@
 
 (s/def ::double
   double?)
+
+(s/def ::enum
+  #{:foo})
+
+(deftest set-test
+  (testing "Set contains value"
+    (is (= "foo" (coerce #{"foo"} "foo"))))
+
+  (testing "Fails on missing value"
+    (is (s/invalid? (coerce #{"foo"} "bar"))))
+
+  (testing "Coerces strings to keywords"
+    (let [f (fn [_ x] (keyword x))]
+      (is (= :foo (coerce #{:foo} "foo" {:f f}))))))
 
 (deftest and-form
   (testing "Value is first conformed by `int?` and than by `pos?` resulting in a long."
@@ -95,7 +109,11 @@
       (is (= {:int 1} (coerce (s/keys :opt-un [::int]) {:int "1"})))))
 
   (testing "Leaves unqualified keys alone"
-    (is (= {:int "1"} (coerce (s/keys) {:int "1"})))))
+    (is (= {:int "1"} (coerce (s/keys) {:int "1"}))))
+
+  (testing "Coerces strings to keywords at a nested set spec."
+    (let [f (fn [[kind] x] (if (= :set kind) (keyword x) x))]
+      (is (= {::enum :foo} (coerce (s/keys :req [::enum]) {::enum "foo"} {:f f}))))))
 
 (deftest merge-form
   (testing "The simplest map validating spec `map?` can be used"
@@ -126,8 +144,16 @@
     (is (s/invalid? (coerce (s/coll-of int? :kind vector?) (list 1)))))
 
   (testing "Coerces collection kinds"
-    (let [coercer (coercer (s/coll-of int? :kind vector?) :coerce-coll-types true)]
+    (let [coercer (coercer (s/coll-of int? :kind vector?) {:coerce-coll-types true})]
       (is (vector? (coerce coercer (list 1)))))))
+
+(deftest cat-form
+  (testing "The cat-form is unsupported."
+    (is (thrown? UnsupportedOperationException (coercer (s/cat))))))
+
+(deftest conformer-form
+  (testing "The conformer-form is unsupported."
+    (is (thrown? UnsupportedOperationException (coercer (s/conformer identity))))))
 
 (deftest json-coercion
   (testing "Objects"
