@@ -37,6 +37,12 @@ That coercion is still implicit because it only uses the spec of the target and 
 
 In most programming languages, an explicit conversation would be a cast. Spec coerce will also support casts by a function, one can supply.
 
+## Install
+
+```clojure
+[spec-coerce "0.1"]
+```
+
 ## Usage
 
 ```clojure

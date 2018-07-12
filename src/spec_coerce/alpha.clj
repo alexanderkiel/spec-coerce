@@ -272,7 +272,7 @@
 
 (defn- coercer*
   "Returns a coercer for `spec`."
-  {:arglists '([conformed-spec-form])}
+  {:arglists '([conformed-spec-form opts])}
   [[kind val] opts]
   ;; look at `::spec-specs/spec` for possible kinds and vals
   (case kind
