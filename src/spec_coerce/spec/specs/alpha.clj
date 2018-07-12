@@ -36,9 +36,6 @@
 
        (defmethod spec-form '~sym [_#] ~form-key))))
 
-(s/def ::spec-or-ref
-  (s/or :spec ::spec :ref qualified-keyword?))
-
 (defspec clojure.spec.alpha/and (s/* ::spec))
 (defspec clojure.spec.alpha/or (s/* (s/cat :tag keyword? :pred ::spec)))
 
