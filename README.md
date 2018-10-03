@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/alexanderkiel/spec-coerce.svg?branch=master)](https://travis-ci.org/alexanderkiel/spec-coerce)
+
 # Spec Coerce
 
 Coercion for Clojure Spec
@@ -63,5 +65,12 @@ In most programming languages, an explicit conversation would be a cast. Spec co
 ### cat
 
 The `cat` form is unsupported because it's most useful in parsing sequential syntaxes. However such sequences are uncommon in data structures which are used for communication or storage. Spec Coerce concentrates on coercing maps or collections of values following a common spec. Such collections can be spec'ed with the `every` or `coll-of` form. Please file an issue if you have a use case for `cat`.
+
+## License
+
+Copyright © 2018 Alexander Kiel
+
+Distributed under the Eclipse Public License either version 1.0 or (at
+your option) any later version.
 
 [1]: <https://en.wikipedia.org/wiki/Type_conversion>

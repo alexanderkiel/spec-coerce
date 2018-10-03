@@ -1,4 +1,4 @@
-(defproject spec-coerce "0.2-SNAPSHOT"
+(defproject org.clojars.akiel/spec-coerce "0.2-SNAPSHOT"
   :description "Coercion for Clojure Spec"
   :url "http://git.life.uni-leipzig.local/clojure/spec-coerce"
 
@@ -19,14 +19,6 @@
    :clj-1.10
    {:dependencies
     [[org.clojure/clojure "1.10.0-alpha5"]]}}
-
-  :deploy-repositories
-  [["life-snapshots"
-    {:url "https://portal.life.uni-leipzig.de/content/repositories/snapshots"
-     :sign-releases false}]
-   ["life-releases"
-    {:url "https://portal.life.uni-leipzig.de/content/repositories/releases"
-     :sign-releases false}]]
 
   :aliases
   {"lint" ["eastwood" "{}"]})
