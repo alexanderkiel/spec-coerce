@@ -1,4 +1,4 @@
-(defproject org.clojars.akiel/spec-coerce "0.2"
+(defproject org.clojars.akiel/spec-coerce "0.3-SNAPSHOT"
   :description "Coercion for Clojure Spec"
   :url "http://git.life.uni-leipzig.local/clojure/spec-coerce"
 
