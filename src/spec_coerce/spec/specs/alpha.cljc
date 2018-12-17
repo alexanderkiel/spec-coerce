@@ -3,7 +3,9 @@
   https://dev.clojure.org/jira/browse/CLJ-2112.
 
   Please don't use it. It's private."
-  (:require [clojure.spec.alpha :as s]))
+  (:require
+    [clojure.spec.alpha :as s]
+    [spec-coerce.spec.specs.macro #?(:clj :refer :cljs :refer-macros) [defspec]]))
 
 ;; open spec for spec forms
 (defmulti spec-form first)
@@ -15,28 +17,14 @@
         :kw qualified-keyword?
         :form (s/multi-spec spec-form (fn [val tag] val))))
 
-(defmethod spec-form 'clojure.core/fn [_]
-  (s/cat :f #{'clojure.core/fn}
+(def ^:private fn-sym #?(:clj 'clojure.core/fn :cljs 'cljs.core/fn))
+
+(defmethod spec-form fn-sym [_]
+  (s/cat :f #{fn-sym}
          :args (s/and vector? #(= 1 (count %)))
          :body (s/* any?)))
 
-;; helper to define a spec for a spec form /foo/ as:
-;;  ::/foo/-args - the arg spec, suitable for use in an fdef
-;;  ::/foo/-form - the form spec, as returned by form
-;;  and register as a method in spec-form
-(defmacro ^:private defspec [sym args-spec]
-  (let [args-key (keyword "spec-coerce.spec.specs.alpha" (str (name sym) "-args"))
-        form-key (keyword "spec-coerce.spec.specs.alpha" (str (name sym) "-form"))]
-    `(do
-       (s/def ~args-key ~args-spec)
-
-       (s/def ~form-key
-         (s/cat :s #{'~sym}
-                :args ~args-spec))
-
-       (defmethod spec-form '~sym [_#] ~form-key))))
-
-(defspec clojure.spec.alpha/and (s/* ::spec))
+(defspec and (s/* ::spec))
 (defspec clojure.spec.alpha/or (s/* (s/cat :tag keyword? :pred ::spec)))
 
 ;;;; Colls

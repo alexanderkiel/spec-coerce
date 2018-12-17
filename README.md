@@ -56,9 +56,11 @@ In most programming languages, an explicit conversation would be a cast. Spec co
 
 ## Implicit Conversations
 
-| Spec | Source Type | Conversation
-|------|-------------|-------------
-| int? | long 
+| Spec       | Source Type | Conversation
+|------------|-------------|-------------
+| `int?`     | string      | `Long/parseLong` / `js/parseInt`
+| `nat-int?` | string      | same as `int?`
+| `pos-int?` | string      | same as `int?`
 
 ## Unsupported Spec Forms
 

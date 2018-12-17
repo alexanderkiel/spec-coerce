@@ -1,9 +1,11 @@
 dist: trusty
 language: clojure
 jdk:
-  - openjdk8
-  - oraclejdk8
-  - oraclejdk9
+- openjdk8
+- oraclejdk8
+- oraclejdk9
 lein: 2.8.1
 script:
-  - lein test
+- lein check
+- lein with-profile +clj-1.9 test
+- lein all-tests
