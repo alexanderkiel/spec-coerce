@@ -5,7 +5,7 @@
     [spec-coerce.spec.specs.alpha :as spec-specs]))
 
 (defprotocol Coercer
-  (-coerce [_ x]))
+  (-coerce [_ x] "Converts `x` into it's desired type. Returns `x` unchanged if that is't possible."))
 
 (defn coercer? [x]
   (satisfies? Coercer x))
@@ -69,13 +69,13 @@
            (try
              (Long/parseLong x)
              (catch Exception _
-               ::s/invalid))
+               x))
            :cljs
            (let [value (js/parseInt x)]
              (if (js/isNaN value)
-               ::s/invalid
+               x
                value)))
-        :else ::s/invalid))))
+        :else x))))
 
 (def map-coercer
   (reify
@@ -84,26 +84,6 @@
       (if (map? x)
         x
         ::s/invalid))))
-
-(def nat-int-coercer
-  (reify
-    Coercer
-    (-coerce [_ x]
-      (let [x (-coerce int-coercer x)]
-        (cond
-          (s/invalid? x) x
-          (not (neg? x)) x
-          :else ::s/invalid)))))
-
-(def pos-int-coercer
-  (reify
-    Coercer
-    (-coerce [_ x]
-      (let [x (-coerce int-coercer x)]
-        (cond
-          (s/invalid? x) x
-          (pos? x) x
-          :else ::s/invalid)))))
 
 (def pos-coercer
   (reify
@@ -117,8 +97,8 @@
 (defmethod pred-coercer `double? [_] double-coercer)
 (defmethod pred-coercer `int? [_] int-coercer)
 (defmethod pred-coercer `map? [_] map-coercer)
-(defmethod pred-coercer `nat-int? [_] nat-int-coercer)
-(defmethod pred-coercer `pos-int? [_] pos-int-coercer)
+(defmethod pred-coercer `nat-int? [_] int-coercer)
+(defmethod pred-coercer `pos-int? [_] int-coercer)
 (defmethod pred-coercer `pos? [_] pos-coercer)
 (defmethod pred-coercer `string? [_] identity-coercer)
 
@@ -305,10 +285,7 @@
   (reify
     Coercer
     (-coerce [_ x]
-      (let [x (f [:set set] x)]
-        (if (contains? set x)
-          x
-          ::s/invalid)))))
+      (f [:set set] x))))
 
 (defn- coercer*
   "Returns a coercer for `spec`."
@@ -420,8 +397,9 @@
   (if (coercer? x)
     x
     (coercer x opts)))
-
+(double)
 (defn coerce
+  "Converts `x` into type. Returns `x` if that is't possible."
   ([coercer-or-spec x]
    (coerce coercer-or-spec x nil))
   ([coercer-or-spec x opts]

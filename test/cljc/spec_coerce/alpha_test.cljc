@@ -32,28 +32,32 @@
        (= x (coerce pos-int? (str x))))))
 
 (deftest predicate-test
-  (testing "int?"
-    (are [dest src] (= dest (coerce int? src))
-      1 "1"
+  (testing "int? predicates"
+    (doseq [pred [int? nat-int? pos-int?]]
+      (are [src dst] (= dst (coerce pred src))
+        "a" "a"
+        :a :a
+        "1" 1
+        1 1
+        "0" 0
+        0 0
+        "-1" -1
+        -1 -1
+        1.0 1.0
+        "1.0" "1.0")))
+
+  (testing "pos? predicate"
+    (are [src dst] (= dst (coerce pos? src))
+      "a" "a"
+      :a :a
+      "1" 1
       1 1
-      0 "0"
+      "0" 0
       0 0
-      -1 "-1"
-      -1 -1))
-  (testing "nat-int?"
-    (are [dest src] (= dest (coerce nat-int? src))
-      1 "1"
-      1 1
-      0 "0"
-      0 0
-      ::s/invalid "-1"
-      ::s/invalid -1))
-  (testing "pos-int?"
-    (are [dest src] (= dest (coerce pos-int? src))
-      1 "1"
-      1 1
-      ::s/invalid "0"
-      ::s/invalid 0)))
+      "-1" -1
+      -1 -1
+      1.0 1.0
+      "1.0" 1.0)))
 
 (s/def ::int
   int?)
@@ -69,11 +73,10 @@
     (is (coercer int?))))
 
 (deftest set-test
-  (testing "Set contains value"
-    (is (= "foo" (coerce #{"foo"} "foo"))))
-
-  (testing "Fails on missing value"
-    (is (s/invalid? (coerce #{"foo"} "bar"))))
+  (testing "Set doesn't do anything to the value"
+    (are [src dst] (= dst (coerce #{"foo"} src))
+      "bar" "bar"
+      "baz" "baz"))
 
   (testing "Coerces strings to keywords"
     (let [f (fn [_ x] (keyword x))]

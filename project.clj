@@ -5,7 +5,8 @@
   :min-lein-version "2.0.0"
   :pedantic? :abort
 
-  :dependencies [[org.clojure/spec.alpha "0.2.176"]]
+  :dependencies
+  [[org.clojure/spec.alpha "0.2.176"]]
 
   :plugins
   [[jonase/eastwood "0.2.6" :exclusions [org.clojure/clojure]]
