@@ -26,6 +26,11 @@
      (prop/for-all [x gen/nat]
        (= x (coerce nat-int? (str x))))))
 
+#?(:clj
+   (defspec pos-int-pred 100
+     (prop/for-all [x gen/s-pos-int]
+       (= x (coerce pos-int? (str x))))))
+
 (deftest predicate-test
   (testing "int?"
     (are [dest src] (= dest (coerce int? src))
