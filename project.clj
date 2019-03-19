@@ -18,7 +18,7 @@
     [[cheshire "5.8.1"]
      [com.google.guava/guava "25.1-jre"]
      [org.clojure/clojure "1.10.0"]
-     [org.clojure/clojurescript "1.10.516"]
+     [org.clojure/clojurescript "1.10.520"]
      [org.clojure/test.check "0.9.0"]]}
    :clj-1.9
    {:dependencies
