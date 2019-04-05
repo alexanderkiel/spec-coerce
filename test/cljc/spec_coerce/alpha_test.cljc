@@ -143,6 +143,12 @@
      (testing "Coerces unqualified"
        (testing "required keys"
          (is (= {:int 1} (coerce (s/keys :req-un [::int]) {:int "1"}))))
+       (testing "required keys"
+         (is (= {:int 1 :double 2.0} (coerce (s/keys :req-un [::int ::double]) {:int "1" :double "2.0"}))))
+       (testing "required keys inside `or`"
+         (is (= {:int 1} (coerce (s/keys :req-un [(or ::int ::double)]) {:int "1"}))))
+       (testing "required keys inside `and`"
+         (is (= {:int 1 :double 2.0} (coerce (s/keys :req-un [(and ::int ::double)]) {:int "1" :double "2.0"}))))
        (testing "optional keys"
          (is (= {:int 1} (coerce (s/keys :opt-un [::int]) {:int "1"})))))
 
