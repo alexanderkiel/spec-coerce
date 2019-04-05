@@ -197,6 +197,18 @@
    (defn keys-coercer
      [{:keys [req req-un opt-un] :as args} {:keys [f] :as opts}]
      (let [remove-ns #(-> % name keyword)
+           req-un-keys
+           (reduce
+             (fn [ret [k v]]
+               (case k
+                 :key
+                 (conj ret [k v])
+                 :or
+                 (into ret (:keys v))
+                 :and
+                 (into ret (:keys v))))
+             []
+             req-un)
 
            coercers
            (reduce
@@ -209,7 +221,7 @@
                  (assoc ret (remove-ns key) (coercer key opts)))
                nil
                opt-un)
-             req-un)
+             req-un-keys)
 
            coercers
            (fn [k]
