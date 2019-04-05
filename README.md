@@ -42,7 +42,7 @@ In most programming languages, an explicit conversation would be a cast. Spec co
 ## Install
 
 ```clojure
-[org.clojars.akiel/spec-coerce "0.2"]
+[org.clojars.akiel/spec-coerce "0.3.1"]
 ```
 
 ## Usage
