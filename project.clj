@@ -12,17 +12,17 @@
 
   :plugins
   [[jonase/eastwood "0.2.6" :exclusions [org.clojure/clojure]]
-   [lein-cljsbuild "1.1.7"]
+   [lein-cljsbuild "1.1.7" :exclusions [org.clojure/clojure]]
    [lein-doo "0.1.10" :exclusions [org.clojure/clojure]]]
 
   :profiles
   {:dev
    {:dependencies
-    [[cheshire "5.8.1"]
+    [[cheshire "5.9.0"]
      [com.google.guava/guava "25.1-jre"]
-     [org.clojure/clojure "1.10.0"]
+     [org.clojure/clojure "1.10.1"]
      [org.clojure/clojurescript "1.10.520"]
-     [org.clojure/test.check "0.9.0"]]}
+     [org.clojure/test.check "0.10.0"]]}
    :clj-1.9
    {:dependencies
     [[org.clojure/clojure "1.9.0"]]}}
