@@ -1,6 +1,9 @@
 (defproject org.clojars.akiel/spec-coerce "0.4-SNAPSHOT"
   :description "Coercion for Clojure Spec"
-  :url "http://git.life.uni-leipzig.local/clojure/spec-coerce"
+  :url "https://github.com/alexanderkiel/spec-coerce"
+
+  :license {:name "Apache License"
+            :url "http://www.apache.org/licenses/LICENSE-2.0"}
 
   :min-lein-version "2.0.0"
   :pedantic? :abort
