@@ -53,7 +53,13 @@
       1 "1"
       1 1
       ::s/invalid "0"
-      ::s/invalid 0)))
+      ::s/invalid 0))
+  (testing "double?"
+    (are [dest src] (= dest (coerce double? src))
+      1.0 "1"
+      1.0 1
+      1.0 1.0
+      ::s/invalid "a")))
 
 (s/def ::int
   int?)

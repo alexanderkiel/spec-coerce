@@ -40,6 +40,7 @@
     (-coerce [_ x]
       (cond
         (double? x) x
+        (number? x) (double x)
         (string? x)
         #?(:clj
            (try
